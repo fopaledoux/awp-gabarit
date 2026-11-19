@@ -2,6 +2,7 @@
 __pycache__/
 .streamlit/secrets.toml
 .env
+.claude
 *.joblib
 !fil_rouge/model.joblib
 .pytest_cache/
