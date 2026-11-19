@@ -1,5 +1,35 @@
 [browser]
 gatherUsageStats = false
 
+# Thème natif (docs.streamlit.io : « style your app with theming ») : les couleurs, les bordures
+# et les arrondis passent par ici plutôt que par du CSS.
 [theme]
+primaryColor = "#1F7A5C"
 font = "sans serif"
+baseRadius = "large"
+buttonRadius = "full"
+showWidgetBorder = true
+showSidebarBorder = true
+linkColor = "#1F7A5C"
+# Palette de base : elle colore les badges, les deltas et les mini-courbes des st.metric.
+redColor = "#C8553D"
+greenColor = "#2E8B67"
+orangeColor = "#E0A526"
+blueColor = "#4C7FA8"
+# Couleurs par défaut des figures Plotly du thème Streamlit.
+chartCategoricalColors = ["#1F7A5C", "#C8553D", "#E0A526", "#4C7FA8", "#8FA3B5", "#7A5C99"]
+chartSequentialColors = ["#E3F1EA", "#B7DCCB", "#86C4AA", "#55AA8A", "#2E8B67", "#1F7A5C", "#0E3B2E"]
+chartDivergingColors = ["#C8553D", "#DE8A74", "#EBBFAF", "#EFEBE0", "#B7DCCB", "#55AA8A", "#1F7A5C"]
+
+[theme.light]
+backgroundColor = "#F5F7F6"
+secondaryBackgroundColor = "#EAF0EC"
+textColor = "#16241E"
+borderColor = "#DCE4DF"
+dataframeHeaderBackgroundColor = "#EAF0EC"
+
+[theme.dark]
+backgroundColor = "#0F1613"
+secondaryBackgroundColor = "#17211C"
+textColor = "#E6EEE9"
+borderColor = "#2A382F"

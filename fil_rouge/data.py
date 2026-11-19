@@ -12,6 +12,21 @@ import pandas as pd
 
 DATA = Path(__file__).resolve().parents[1] / "data" / "echecs"
 
+COLONNES = [
+    "partie_id",
+    "date_jeu",
+    "cadence",
+    "couleur",
+    "resultat",
+    "elo_joueur",
+    "elo_adverse",
+    "ouverture_famille",
+    "gaffes_joueur",
+]
+NUMERIQUES = ["elo_joueur", "elo_adverse", "gaffes_joueur"]
+RESULTATS = {"win": "victoire", "draw": "nulle", "lose": "défaite"}
+SCORES = {"victoire": 1.0, "nulle": 0.5, "défaite": 0.0}
+
 
 def valider(df: pd.DataFrame) -> pd.DataFrame:
     """Plan B : s'arrêter avec un message clair si le fichier n'a pas la forme attendue.
@@ -19,7 +34,22 @@ def valider(df: pd.DataFrame) -> pd.DataFrame:
     Colonnes absentes, colonnes entièrement vides, nombres lus comme du texte,
     identifiant de partie en double, résultat inconnu.
     """
-    raise NotImplementedError("TODO exo 1")
+    absentes = [c for c in COLONNES if c not in df.columns]
+    if absentes:
+        raise ValueError(f"parties.csv : colonnes absentes {absentes}")
+    vides = [c for c in COLONNES if df[c].isna().all()]
+    if vides:
+        raise ValueError(f"parties.csv : colonnes entièrement vides {vides}")
+    texte = [c for c in NUMERIQUES if not pd.api.types.is_numeric_dtype(df[c])]
+    if texte:
+        raise ValueError(f"parties.csv : colonnes lues comme du texte au lieu de nombres {texte}")
+    doublons = df.loc[df["partie_id"].duplicated(), "partie_id"].unique().tolist()
+    if doublons:
+        raise ValueError(f"parties.csv : partie_id en double {doublons[:5]}")
+    inconnus = set(df["resultat"].dropna()) - set(RESULTATS)
+    if inconnus or df["resultat"].isna().any():
+        raise ValueError(f"parties.csv : résultat inconnu ou vide {sorted(inconnus)}")
+    return df
 
 
 def load_data() -> pd.DataFrame:
@@ -32,12 +62,23 @@ def load_data() -> pd.DataFrame:
     resultat (victoire, nulle, défaite), score, annee, heure (UTC), ecart_elo
     (Elo de l'adversaire moins le mien), cadence.
     """
-    raise NotImplementedError("TODO exo 1")
+    df = valider(pd.read_csv(DATA / "parties.csv"))
+    # Dates UTC sans fuseau écrit : on les garde « naïves », en sachant que c'est de l'UTC.
+    df["date_jeu"] = pd.to_datetime(df["date_jeu"])
+    df["resultat"] = df["resultat"].map(RESULTATS)
+    df["score"] = df["resultat"].map(SCORES)
+    df["annee"] = df["date_jeu"].dt.year
+    df["heure"] = df["date_jeu"].dt.hour
+    # Vide (NaN) pour les parties sans Elo d'avant : premières de série Chess.com, importées.
+    df["ecart_elo"] = df["elo_adverse"] - df["elo_joueur"]
+    # Correspondance, sans pendule, importées : sans « aucune », un filtre les ferait disparaître.
+    df["cadence"] = df["cadence"].fillna("aucune")
+    return df
 
 
 def load_coups() -> pd.DataFrame:
     """Un de mes coups jugés mauvais par ligne (data/echecs/coups_juges.csv)."""
-    raise NotImplementedError("TODO exo 1")
+    return pd.read_csv(DATA / "coups_juges.csv")
 
 
 def familles(df: pd.DataFrame, min_n: int = 30) -> pd.DataFrame:
@@ -46,9 +87,17 @@ def familles(df: pd.DataFrame, min_n: int = 30) -> pd.DataFrame:
     Colonnes : famille, n (parties), score, gaffes (par partie).
     Sous min_n parties le chiffre ne dit rien : écartez la famille.
     """
-    raise NotImplementedError("TODO exo 1")
+    f = (
+        df.dropna(subset=["ouverture_famille"])
+        .groupby("ouverture_famille", as_index=False)
+        .agg(n=("partie_id", "size"), score=("score", "mean"), gaffes=("gaffes_joueur", "mean"))
+        .rename(columns={"ouverture_famille": "famille"})
+    )
+    return f[f["n"] >= min_n].sort_values("score").reset_index(drop=True)
 
 
 if __name__ == "__main__":
     d = load_data()
     print(d.shape)
+    print(d["cadence"].value_counts())
+    print(familles(d).head(10))
